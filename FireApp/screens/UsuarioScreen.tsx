@@ -1,8 +1,9 @@
 
-import { Alert, Button, FlatList, StyleSheet, Text, TextInput, View } from 'react-native'
+import { Alert, Button, FlatList, StatusBar, StyleSheet, Text, TextInput, View } from 'react-native'
 import React, { useEffect, useState } from 'react'
 import { db } from '../config/Config';
-import { ref, set, onValue } from "firebase/database";
+import { ref, set, onValue, remove, update } from "firebase/database";
+import Tarjeta from '../components/Tarjeta';
 
 
 export default function UsuarioScreen() {
@@ -10,28 +11,32 @@ export default function UsuarioScreen() {
     const [nombre, setnombre] = useState("")
     const [correo, setcorreo] = useState("")
     const [comentario, setcomentario] = useState("")
-
+    
     const[usuarios,setusuarios]=useState([])
-
+    
+    
     //----------GUARDAR INFORMCIÓN---------//
-    function guardarUsuario(cedula:string, name:string, email:string, comentario:string) {
+    function guardarUsuario(cedula:string, nombre:string, correo:string, comentario:string) {
         
         set(ref(db, 'usuarios/' + cedula), {
           name: nombre,
           email: correo,
-          comentario : comentario
+          coment : comentario
         });
-
-        Alert.alert("Mensaje","Información")
+      
+      
+      
+        Alert.alert("Mensaje","Información Ingresada")
         setcedula("")
         setnombre("")
         setcorreo("")
         setcomentario("")
       }
-
+      
+      //LEER
       useEffect(()=>{
 
-      const starCountRef = ref(db, 'usuarios' + cedula);
+      const starCountRef = ref(db, 'usuarios/');
       onValue(starCountRef, (snapshot) => {
       const data = snapshot.val();
       //console.log(data);
@@ -39,6 +44,7 @@ export default function UsuarioScreen() {
       const dataTemp:any = Object.keys(data).map((key)=>({
         key, ...data[key]
       }))
+
       console.log(dataTemp);
       setusuarios(dataTemp)
 
@@ -46,8 +52,33 @@ export default function UsuarioScreen() {
       });
 
       },[])
+      //-----------EDITAR-------------//
+      function editar (id:string){
+       
+        update(ref(db, 'usuarios/' + id), {
+          name: nombre,
+          email: correo,
+          coment : comentario
+        });
+        }
+
+
+        function editar2(item:any){
+          setcedula(item.key)
+          setnombre(item.name)
+          setcorreo(item.email)
+          setcomentario(item.coment)
+        }
+      
+
+      //--------ELIMINAR--------//
+      function eliminar(id:string){
+        remove(ref(db,'usuarios/' + id));
+      }
+
       type Usuarios={
         name:string
+        key:string
       }
 
 return (
@@ -79,12 +110,18 @@ return (
         <Button title='Guardar'onPress={()=>guardarUsuario(cedula,nombre,correo,comentario)}/>
          <FlatList data={usuarios} 
          renderItem={({item}:{item:Usuarios})=>
-        
-        <View>
-            <Text>{item.name}</Text>
-        </View>   
+         //<Tarjeta usuario ={item}/>
+         <View>
+          <Tarjeta usuario={item}/>
+          <View  style={{flexDirection:'row'}}>
+             <Button title='Editar' color={'green'} onPress={()=>editar2(item.key)}/>
+              
+             <Button title='Eliminar' color={'red'} onPress={()=>eliminar(item.key)}/>
+          </View>
+         </View>
 }
         />
+        <StatusBar/>
     </View>
 
   )
